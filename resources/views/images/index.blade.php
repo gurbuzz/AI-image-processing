@@ -16,13 +16,15 @@
             @foreach ($images as $image)
                 <div class="col-md-4 mb-4">
                     <div class="card">
-                        <img src="{{ asset('uploads/'.$image->filename) }}" class="card-img-top" alt="{{ $image->filename }}">
+                        <img src="{{ asset('uploads/' . $image->filename) }}" class="card-img-top" alt="{{ $image->filename }}">
                         <div class="card-body">
                             <form action="{{ route('images.destroy', $image->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-block">Sil</button>
+                                <button type="submit" class="btn btn-danger btn-block mb-2">Sil</button>
                             </form>
+                            <!-- AI Butonu -->
+                            <a href="{{ route('images.analyze', ['id' => $image->id]) }}" class="btn btn-success btn-block">AI</a>
                         </div>
                     </div>
                 </div>

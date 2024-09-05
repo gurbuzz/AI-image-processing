@@ -1,0 +1,7 @@
+{
+    "model_type": "yolov8",
+    "architecture": "YOLOv8",
+    "num_classes": 80,
+    "input_size": [640, 640]
+  }
+  
