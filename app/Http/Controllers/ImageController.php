@@ -96,43 +96,47 @@ class ImageController extends Controller
         $image = Image::findOrFail($id);
         $imagePath = public_path('uploads') . '/' . $image->filename;
     
-        // Python betiğini çalıştırma komutunu hazırla
-        $command = escapeshellcmd('python.exe ' . base_path('yolo_analyze.py') . ' ' . escapeshellarg($imagePath));
-        
-        // Çıktıyı ve dönüş değerini tutacak değişkenler
+        // Prepare the command to run the Python script
+        $command = escapeshellcmd('python3 ' . base_path('yolo_analyze.py') . ' ' . escapeshellarg($imagePath));
+    
+        // Variables to hold the output and return value
         $output = [];
         $return_var = null;
     
-        // Python betiğini çalıştır ve sonucu al
+        // Run the Python script and capture the output
         exec($command, $output, $return_var);
     
-        // Çıktı ve dönüş değerine göre işlem yap
-        Log::info('Python betiği çıktısı:', ['output_raw' => $output]);
+        // Log the output and return value
+        Log::info('Python script output:', ['output_raw' => $output]);
     
-        // Çıktıyı birleştir ve sadece JSON formatına uygun olan kısmı ayıkla
+        // Combine the output and extract the JSON part
         $output_str = implode("\n", $output);
-        Log::info('Python betiği birleşik çıktısı:', ['output_combined' => $output_str]);
+        Log::info('Python script combined output:', ['output_combined' => $output_str]);
     
-        // JSON kısmını ayıklamak için, JSON formatına benzeyen kısmı bul
+        // Attempt to extract the JSON part
+        $results = null;
         if (preg_match('/\[{.*}\]/', $output_str, $matches)) {
-            $json_str = $matches[0];  // Sadece JSON kısmını al
-            Log::info('Ayıklanan JSON kısmı:', ['json_str' => $json_str]);
+            $json_str = $matches[0];  // Get only the JSON part
+            Log::info('Extracted JSON part:', ['json_str' => $json_str]);
     
-            // JSON'u çözümle
+            // Decode the JSON
             $results = json_decode($json_str, true);
     
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Log::error('JSON decode error: ' . json_last_error_msg());
-                return redirect()->back()->withErrors(['error' => 'JSON decode error: ' . json_last_error_msg()]);
+                // Proceed without redirecting back
+                $results = null;
+            } else {
+                Log::info('JSON decode successful:', ['results' => $results]);
             }
-    
-            Log::info('JSON decode başarılı:', ['results' => $results]);
-    
-            return view('images.analyze', compact('image', 'results'));
         } else {
-            Log::error('JSON formatına uygun veri bulunamadı.');
-            return redirect()->back()->withErrors(['error' => 'JSON formatına uygun veri bulunamadı.']);
+            Log::error('No data in JSON format found.');
+            // Proceed without redirecting back
+            $results = null;
         }
+    
+        // Return the view with the image and results (which may be null)
+        return view('images.analyze', compact('image', 'results'));
     }
     
 }

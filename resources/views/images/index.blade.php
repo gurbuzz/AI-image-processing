@@ -21,10 +21,10 @@
                             <form action="{{ route('images.destroy', $image->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-block mb-2">Sil</button>
+                                <button type="submit" class="btn btn-danger btn-block mb-2">Delete</button>
                             </form>
                             <!-- AI Butonu -->
-                            <a href="{{ route('images.analyze', ['id' => $image->id]) }}" class="btn btn-success btn-block">AI</a>
+                            <a href="{{ route('images.analyze', ['id' => $image->id]) }}" class="btn btn-success btn-block">Ai</a>
                         </div>
                     </div>
                 </div>

@@ -2,10 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Result for {{ $image->filename }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Include Fabric.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <style>
+        /* Optional styling */
+        .canvas-container {
+            margin: 0 auto;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .alert {
+            margin-top: 20px;
+        }
+        .btn {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
@@ -43,60 +58,91 @@
         @endif
 
         <div class="text-center">
-            <a href="{{ route('images.index') }}" class="btn btn-primary mt-3">Back to Image List</a>
+            <a href="{{ route('images.index') }}" class="btn btn-primary">Back to Image List</a>
         </div>
     </div>
 
     <script>
+        // Initialize the Fabric.js canvas
         var canvas = new fabric.Canvas('imageCanvas');
 
-        // Resmi Canvas'a ekle
+        // Load the image onto the canvas
         fabric.Image.fromURL("{{ asset('uploads/' . $image->filename) }}", function(img) {
-            // Orijinal resim boyutlarını ve canvas boyutlarını kontrol et
+            // Get original image dimensions
             var imgWidth = img.width;
             var imgHeight = img.height;
             var canvasWidth = canvas.width;
             var canvasHeight = canvas.height;
 
-            // Resmi canvas'a uygun şekilde scale et
+            // Calculate scaling to fit the canvas
             var scaleX = canvasWidth / imgWidth;
             var scaleY = canvasHeight / imgHeight;
             var scale = Math.min(scaleX, scaleY);
 
-            // Resmi merkezleyerek canvas'a yerleştir
-            img.scale(scale).set({
+            // Scale and center the image
+            img.scale(scale);
+            img.set({
                 left: (canvasWidth - imgWidth * scale) / 2,
-                top: (canvasHeight - imgHeight * scale) / 2
+                top: (canvasHeight - imgHeight * scale) / 2,
+                selectable: false
             });
 
+            // Set the image as the background
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
 
-            // Bounding box'ları çiz
-            @foreach($results as $result)
-                var box = {{ json_encode($result['box']) }};
-                var x1 = box[0][0] * scale;
-                var y1 = box[0][1] * scale;
-                var x2 = box[0][2] * scale;
-                var y2 = box[0][3] * scale;
+            // Prepare the results data
+            var resultsData = [];
+            @if(is_array($results) && !empty($results))
+                resultsData = {!! json_encode($results) !!};
+            @endif
 
-                // Koordinatları kontrol et
-                var rect = new fabric.Rect({
-                    left: x1 + img.left, // Koordinatları resmi merkeze kaydır
-                    top: y1 + img.top,
-                    width: (x2 - x1),
-                    height: (y2 - y1),
-                    fill: 'rgba(0, 0, 255, 0.3)', // Şeffaf mavi
-                    stroke: 'blue', // Kenarlık rengi
-                    strokeWidth: 2,
-                    selectable: false
+            // Draw bounding boxes if there are results
+            if (resultsData.length > 0) {
+                resultsData.forEach(function(result) {
+                    var box = result.box || [];
+                    if (box.length === 4) {
+                        var x1 = box[0] * scale + img.left;
+                        var y1 = box[1] * scale + img.top;
+                        var x2 = box[2] * scale + img.left;
+                        var y2 = box[3] * scale + img.top;
+
+                        var rect = new fabric.Rect({
+                            left: x1,
+                            top: y1,
+                            width: x2 - x1,
+                            height: y2 - y1,
+                            fill: 'rgba(0, 0, 255, 0.3)', // Semi-transparent blue
+                            stroke: 'blue',
+                            strokeWidth: 2,
+                            selectable: false
+                        });
+                        canvas.add(rect);
+
+                        // Add label text
+                        var text = new fabric.Text(result.label || 'N/A', {
+                            left: x1 + 5,
+                            top: y1 + 5,
+                            fontSize: 14,
+                            fill: 'white',
+                            backgroundColor: 'rgba(0, 0, 255, 0.7)',
+                            selectable: false
+                        });
+                        canvas.add(text);
+                    }
                 });
-                canvas.add(rect);
-            @endforeach
+            }
+        });
+
+        // Optional: Resize the canvas when the window size changes
+        window.addEventListener('resize', function() {
+            var canvasContainer = document.getElementById('imageCanvas').parentElement;
+            canvas.setWidth(canvasContainer.offsetWidth);
+            canvas.setHeight(canvasContainer.offsetHeight);
+            canvas.renderAll();
         });
     </script>
 
+    <!-- Include Bootstrap JS (optional) -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ use App\Http\Controllers\ImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('images.create');
+    return redirect()->route('images.index');
 });
 
 Route::get('images', [ImageController::class, 'index'])->name('images.index');

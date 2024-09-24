@@ -1,3 +1,4 @@
+# yolo_analyze.py
 import logging
 from PIL import Image
 import json
@@ -19,12 +20,12 @@ def analyze_image(image_path):
         image = Image.open(image_path).convert("RGB")
         logging.info(f"Görüntü boyutu: {image.size}, format: {image.mode}")
 
-        # YOLOv8 modelini yükle
-        model = YOLO("yolov8n.pt")  # İhtiyaca göre yolov8s.pt kullan
+        # YOLOv8 modelini kendi eğittiğin modelle yükle
+        model = YOLO("C:/ai-image-processing/runs/detect/train3/weights/best.pt")  # Kendi modelinin yolunu kullan
         logging.info("YOLOv8 modeli başarıyla yüklendi.")
 
-        # Görüntüyü işleyip analiz et
-        results = model(image_path)
+        # Görüntüyü işleyip analiz et - confidence threshold'u ayarla
+        results = model(image_path, conf=0.2)  # Güvenlik eşiğini 0.2 yaparak daha fazla tahmin alabilirsin
         logging.info(f"Model çıktı sonuçları: {results}")
 
         # Sonuçları işleme
@@ -69,7 +70,7 @@ def analyze_image(image_path):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
-        image_path = sys.argv[1]  # Görüntü yolunu argüman olarak al
+        image_path = sys.argv[1]  # Laravel'den görüntü yolunu argüman olarak al
         print(analyze_image(image_path))
     else:
         logging.error("Görüntü yolu sağlanmadı.")
