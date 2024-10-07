@@ -27,7 +27,7 @@ class ImageController extends Controller
         Log::info('Image upload form accessed.');
         return view('images.create');
     }
-    
+
     public function destroy($id)
     {
         try {
@@ -97,15 +97,30 @@ class ImageController extends Controller
     }
 
     // Görüntü analizi fonksiyonu
-    public function analyze($id)
+    public function analyze(Request $request, $id)
     {
+        // Resmi bul
         $image = Image::findOrFail($id);
         $imagePath = public_path('uploads') . '/' . $image->filename;
-        
-        // Hugging Face Servisini kullanarak analizi başlat
-        $results = $this->huggingFaceService->analyzeImage($imagePath);
     
-        // Return the view with the image and results (which may be null)
-        return view('images.analyze', compact('image', 'results'));
+        // Eğer GET isteği ise sadece formu göster
+        if ($request->isMethod('get')) {
+            return view('images.analyze', compact('image')); // GET isteğinde sadece 'image' değişkenini gönderiyoruz
+        }
+    
+        // POST isteği ise Hugging Face model URL'sini al
+        $modelUrl = $request->input('model_url');
+    
+        // Model URL'sinin boş olup olmadığını kontrol edin
+        if (empty($modelUrl)) {
+            return redirect()->back()->withErrors(['error' => 'Model URL is required.']);
+        }
+    
+        // Hugging Face Servisini kullanarak analizi başlat
+        $results = $this->huggingFaceService->analyzeImage($imagePath, $modelUrl);
+    
+        // Sonuçlarla birlikte view'e dön
+        return view('images.analyze', compact('image', 'results')); // Hem 'image' hem de 'results' değişkenini view'e gönderiyoruz
     }
+    
 }

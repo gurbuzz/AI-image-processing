@@ -14,13 +14,32 @@
     </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">AI Image Processing</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('images.index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('images.create') }}">Upload New Image</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h2>Upload Image</h2>
-                        <a href="{{ url()->previous() }}" class="btn btn-secondary">Back</a>
+                        <a href="{{ route('images.index') }}" class="btn btn-secondary">Back to Images</a>
                     </div>
                     <div class="card-body">
                         @if ($message = Session::get('success'))
@@ -50,14 +69,7 @@
 
                         <img id="imgPreview" src="" alt="Image Preview" class="img-preview d-none"/>
 
-                        @if ($imagePath = Session::get('imagePath'))
-                            <div class="mt-3">
-                                <h4>Uploaded Image:</h4>
-                                <img src="{{ asset('storage/' . $imagePath) }}" alt="Uploaded Image" class="img-fluid img-preview">
-                            </div>
-                        @endif
-
-                        <a href="http://127.0.0.1:8000/images" class="btn btn-info mt-3">Go to Images Page</a>
+                        <a href="{{ route('images.index') }}" class="btn btn-info mt-3">Go to Images Page</a>
                     </div>
                 </div>
             </div>

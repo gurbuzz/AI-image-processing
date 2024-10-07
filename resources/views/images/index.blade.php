@@ -7,6 +7,25 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">AI Image Processing</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('images.index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('images.create') }}">Upload New Image</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
     <div class="container mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Uploaded Images</h2>
@@ -23,14 +42,14 @@
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-block mb-2">Delete</button>
                             </form>
-                            <!-- AI Butonu -->
-                            <a href="{{ route('images.analyze', ['id' => $image->id]) }}" class="btn btn-success btn-block">Ai</a>
+                            <a href="{{ route('images.analyze', ['id' => $image->id]) }}" class="btn btn-success btn-block">Analyze with AI</a>
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
     </div>
+
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>

@@ -12,26 +12,36 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
 
     <style>
-        /* Navbar styling */
-        .navbar {
-            background-color: #343a40;
-            color: white;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .navbar h1 {
-            margin: 0;
-            font-size: 24px;
-            color: white;
-        }
-
+        /* Flexbox container to center the canvas */
         .canvas-container {
-            margin: 0 auto;
+            display: flex;
+            justify-content: center;  /* Yatayda ortalama */
+            align-items: center;      /* Dikeyde ortalama */
+            height: 100%;             /* Yükseklik ayarı */
+            margin-bottom: 40px;      /* Fotoğraf ve tablo arasına boşluk */
         }
 
         .table-responsive {
-            margin-top: 20px;
+            margin-top: 40px; /* Fotoğraf ile tablo arasında boşluk */
+        }
+
+        .table {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+            background-color: #f8f9fa;
+        }
+
+        .table thead th {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+        }
+
+        .table tbody td {
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
 
         .alert {
@@ -41,37 +51,51 @@
         .btn {
             margin-top: 20px;
         }
-
-        /* Optional styling for canvas and table */
-        canvas {
-            border: 1px solid #ccc;
-            margin-top: 20px;
-        }
-
-        table {
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
-
     <!-- Navbar -->
-    <div class="navbar">
-        <h1>AI Image Processing</h1>
-    </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">AI Image Processing</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('images.index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('images.create') }}">Upload New Image</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
 
     <!-- Main content -->
     <div class="container mt-5">
         <h2 class="mb-4 text-center">Analysis Result for {{ $image->filename }}</h2>
 
-        <div class="text-center mb-4">
+        <!-- Model URL form -->
+        <form action="{{ route('images.analyze', ['id' => $image->id]) }}" method="POST" class="mb-4">
+            @csrf
+            <div class="form-group">
+                <label for="model_url">Enter Hugging Face Model URL:</label>
+                <input type="text" name="model_url" id="model_url" class="form-control" placeholder="https://api-inference.huggingface.co/models/facebook/detr-resnet-50" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze with Selected Model</button>
+        </form>
+
+        <!-- Display canvas for the image -->
+        <div class="canvas-container">
             <canvas id="imageCanvas" width="800" height="600"></canvas>
         </div>
 
-        @if(is_array($results) && !empty($results))
+        <!-- Check if $results variable exists -->
+        @if(isset($results) && is_array($results) && !empty($results))
             <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="thead-dark">
+                <table class="table table-hover">
+                    <thead>
                         <tr>
                             <th>Label</th>
                             <th>Score</th>
@@ -104,25 +128,16 @@
         // Initialize the Fabric.js canvas
         var canvas = new fabric.Canvas('imageCanvas');
 
-        // Log the initial canvas dimensions
-        console.log('Initial Canvas Dimensions:', { width: canvas.width, height: canvas.height });
-
         // Load the image onto the canvas
         fabric.Image.fromURL("{{ asset('uploads/' . $image->filename) }}", function(img) {
-            console.log('Image loaded:', img);
-
             var imgWidth = img.width;
             var imgHeight = img.height;
-            console.log('Image dimensions:', { imgWidth, imgHeight });
-
             var canvasWidth = canvas.width;
             var canvasHeight = canvas.height;
-            console.log('Canvas dimensions:', { canvasWidth, canvasHeight });
 
             var scaleX = canvasWidth / imgWidth;
             var scaleY = canvasHeight / imgHeight;
             var scale = Math.min(scaleX, scaleY);
-            console.log('Scale factors:', { scaleX, scaleY, scale });
 
             img.scaleToWidth(canvasWidth);
             img.set({
@@ -133,59 +148,42 @@
 
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
 
-            // Prepare the results data
-            var resultsData = [];
-            @if(is_array($results) && !empty($results))
-                resultsData = {!! json_encode($results) !!};
-                console.log('Analysis results:', resultsData);
-            @else
-                console.log('No results found or error in analysis.');
-            @endif
+            // Check if there are results to draw bounding boxes
+            @if(isset($results) && is_array($results) && !empty($results))
+                var resultsData = {!! json_encode($results) !!};
 
-            // Draw bounding boxes if there are results
-            if (resultsData.length > 0) {
                 resultsData.forEach(function(result) {
                     var box = result.box || {};
                     if (box.xmin !== undefined && box.ymin !== undefined && box.xmax !== undefined && box.ymax !== undefined) {
-                        // Bounding box coordinates, scaled to fit the canvas
                         var x1 = box.xmin * scaleX;
                         var y1 = box.ymin * scaleY;
                         var x2 = box.xmax * scaleX;
                         var y2 = box.ymax * scaleY;
-
-                        console.log('Label:', result.label);
-                        console.log('Box:', box);
-                        console.log('Coordinates:', { x1, y1, x2, y2 });
 
                         var rect = new fabric.Rect({
                             left: x1,
                             top: y1,
                             width: x2 - x1,
                             height: y2 - y1,
-                            fill: 'rgba(0, 0, 255, 0.3)', // Semi-transparent blue
+                            fill: 'rgba(0, 0, 255, 0.1)', // Daha şeffaf
                             stroke: 'blue',
                             strokeWidth: 2,
                             selectable: false
                         });
                         canvas.add(rect);
 
-                        // Add label text
                         var text = new fabric.Text(result.label || 'N/A', {
                             left: x1 + 5,
                             top: y1 + 5,
                             fontSize: 14,
                             fill: 'white',
-                            backgroundColor: 'rgba(0, 0, 255, 0.7)',
+                            backgroundColor: 'rgba(0, 0, 255, 0.5)', // Daha şeffaf
                             selectable: false
                         });
                         canvas.add(text);
-                    } else {
-                        console.log('Bounding box format is incorrect or empty for label:', result.label);
                     }
                 });
-            } else {
-                console.log('No bounding boxes found in the results.');
-            }
+            @endif
         });
 
         // Optional: Resize the canvas when the window size changes
