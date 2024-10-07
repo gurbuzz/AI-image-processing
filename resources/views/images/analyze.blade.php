@@ -2,27 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Result for {{ $image->filename }}</title>
+    
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    
     <!-- Include Fabric.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+
     <style>
-        /* Optional styling */
+        /* Navbar styling */
+        .navbar {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
+            color: white;
+        }
+
         .canvas-container {
             margin: 0 auto;
         }
+
         .table-responsive {
             margin-top: 20px;
         }
+
         .alert {
             margin-top: 20px;
         }
+
         .btn {
+            margin-top: 20px;
+        }
+
+        /* Optional styling for canvas and table */
+        canvas {
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+
+        table {
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <h1>AI Image Processing</h1>
+    </div>
+
+    <!-- Main content -->
     <div class="container mt-5">
         <h2 class="mb-4 text-center">Analysis Result for {{ $image->filename }}</h2>
 
@@ -32,12 +70,12 @@
 
         @if(is_array($results) && !empty($results))
             <div class="table-responsive">
-                <table class="table table-bordered">
+                <table class="table table-bordered table-hover">
                     <thead class="thead-dark">
                         <tr>
                             <th>Label</th>
                             <th>Score</th>
-                            <th>Bounding Box (x1, y1, x2, y2)</th>
+                            <th>Bounding Box (xmin, ymin, xmax, ymax)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -66,45 +104,58 @@
         // Initialize the Fabric.js canvas
         var canvas = new fabric.Canvas('imageCanvas');
 
+        // Log the initial canvas dimensions
+        console.log('Initial Canvas Dimensions:', { width: canvas.width, height: canvas.height });
+
         // Load the image onto the canvas
         fabric.Image.fromURL("{{ asset('uploads/' . $image->filename) }}", function(img) {
-            // Get original image dimensions
+            console.log('Image loaded:', img);
+
             var imgWidth = img.width;
             var imgHeight = img.height;
+            console.log('Image dimensions:', { imgWidth, imgHeight });
+
             var canvasWidth = canvas.width;
             var canvasHeight = canvas.height;
+            console.log('Canvas dimensions:', { canvasWidth, canvasHeight });
 
-            // Calculate scaling to fit the canvas
             var scaleX = canvasWidth / imgWidth;
             var scaleY = canvasHeight / imgHeight;
             var scale = Math.min(scaleX, scaleY);
+            console.log('Scale factors:', { scaleX, scaleY, scale });
 
-            // Scale and center the image
-            img.scale(scale);
+            img.scaleToWidth(canvasWidth);
             img.set({
                 left: (canvasWidth - imgWidth * scale) / 2,
                 top: (canvasHeight - imgHeight * scale) / 2,
                 selectable: false
             });
 
-            // Set the image as the background
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
 
             // Prepare the results data
             var resultsData = [];
             @if(is_array($results) && !empty($results))
                 resultsData = {!! json_encode($results) !!};
+                console.log('Analysis results:', resultsData);
+            @else
+                console.log('No results found or error in analysis.');
             @endif
 
             // Draw bounding boxes if there are results
             if (resultsData.length > 0) {
                 resultsData.forEach(function(result) {
-                    var box = result.box || [];
-                    if (box.length === 4) {
-                        var x1 = box[0] * scale + img.left;
-                        var y1 = box[1] * scale + img.top;
-                        var x2 = box[2] * scale + img.left;
-                        var y2 = box[3] * scale + img.top;
+                    var box = result.box || {};
+                    if (box.xmin !== undefined && box.ymin !== undefined && box.xmax !== undefined && box.ymax !== undefined) {
+                        // Bounding box coordinates, scaled to fit the canvas
+                        var x1 = box.xmin * scaleX;
+                        var y1 = box.ymin * scaleY;
+                        var x2 = box.xmax * scaleX;
+                        var y2 = box.ymax * scaleY;
+
+                        console.log('Label:', result.label);
+                        console.log('Box:', box);
+                        console.log('Coordinates:', { x1, y1, x2, y2 });
 
                         var rect = new fabric.Rect({
                             left: x1,
@@ -128,8 +179,12 @@
                             selectable: false
                         });
                         canvas.add(text);
+                    } else {
+                        console.log('Bounding box format is incorrect or empty for label:', result.label);
                     }
                 });
+            } else {
+                console.log('No bounding boxes found in the results.');
             }
         });
 
@@ -142,7 +197,7 @@
         });
     </script>
 
-    <!-- Include Bootstrap JS (optional) -->
+    <!-- Bootstrap JS (optional) -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 </body>
 </html>

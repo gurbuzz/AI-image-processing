@@ -4,12 +4,18 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Image;
+use App\Services\HuggingFaceService;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class ImageController extends Controller
 {
+    protected $huggingFaceService;
+
+    public function __construct(HuggingFaceService $huggingFaceService)
+    {
+        $this->huggingFaceService = $huggingFaceService;
+    }
+
     public function index()
     {
         $images = Image::all();
@@ -95,48 +101,11 @@ class ImageController extends Controller
     {
         $image = Image::findOrFail($id);
         $imagePath = public_path('uploads') . '/' . $image->filename;
-    
-        // Prepare the command to run the Python script
-        $command = escapeshellcmd('python3 ' . base_path('yolo_analyze.py') . ' ' . escapeshellarg($imagePath));
-    
-        // Variables to hold the output and return value
-        $output = [];
-        $return_var = null;
-    
-        // Run the Python script and capture the output
-        exec($command, $output, $return_var);
-    
-        // Log the output and return value
-        Log::info('Python script output:', ['output_raw' => $output]);
-    
-        // Combine the output and extract the JSON part
-        $output_str = implode("\n", $output);
-        Log::info('Python script combined output:', ['output_combined' => $output_str]);
-    
-        // Attempt to extract the JSON part
-        $results = null;
-        if (preg_match('/\[{.*}\]/', $output_str, $matches)) {
-            $json_str = $matches[0];  // Get only the JSON part
-            Log::info('Extracted JSON part:', ['json_str' => $json_str]);
-    
-            // Decode the JSON
-            $results = json_decode($json_str, true);
-    
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('JSON decode error: ' . json_last_error_msg());
-                // Proceed without redirecting back
-                $results = null;
-            } else {
-                Log::info('JSON decode successful:', ['results' => $results]);
-            }
-        } else {
-            Log::error('No data in JSON format found.');
-            // Proceed without redirecting back
-            $results = null;
-        }
+        
+        // Hugging Face Servisini kullanarak analizi başlat
+        $results = $this->huggingFaceService->analyzeImage($imagePath);
     
         // Return the view with the image and results (which may be null)
         return view('images.analyze', compact('image', 'results'));
     }
-    
 }
