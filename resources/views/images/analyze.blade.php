@@ -74,7 +74,6 @@
 
     <!-- Main content -->
     <div class="container mt-5">
-        <h2 class="mb-4 text-center">Analysis Result for {{ $image->filename }}</h2>
 
         <!-- Model URL form -->
         <form action="{{ route('images.analyze', ['id' => $image->id]) }}" method="POST" class="mb-4">

@@ -69,7 +69,6 @@
 
                         <img id="imgPreview" src="" alt="Image Preview" class="img-preview d-none"/>
 
-                        <a href="{{ route('images.index') }}" class="btn btn-info mt-3">Go to Images Page</a>
                     </div>
                 </div>
             </div>
