@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 class HuggingFaceService
 {
     // API Anahtarınızı doğrudan buraya yerleştiriyoruz
-    protected $apiKey = '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'; // Buraya doğrudan anahtarınızı ekleyin
+    protected $apiKey = ''; // Buraya doğrudan anahtarınızı ekleyin
 
     public function analyzeImage($imagePath, $modelUrl)
     {
